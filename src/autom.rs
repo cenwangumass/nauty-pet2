@@ -14,6 +14,7 @@ use crate::nauty_graph::DenseGraph;
 use crate::nauty_graph::RawGraphData;
 use crate::nauty_graph::SparseGraph;
 
+use itertools::Itertools;
 use nauty_Traces_sys::allgroup;
 use nauty_Traces_sys::groupautomproc;
 use nauty_Traces_sys::grouplevelproc;
@@ -35,7 +36,7 @@ use petgraph::{
 /// permutation corresponds to replacing each node index `n` in a
 /// graph `g` by `g.from_index(perm[g.to_index(n)])`
 #[derive(Clone, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub struct AutomGroup(pub Vec<Vec<usize>>);
+pub struct AutomGroup(pub Vec<Vec<usize>>, pub Vec<usize>);
 
 impl Deref for AutomGroup {
     type Target = Vec<Vec<usize>>;
@@ -132,7 +133,7 @@ where
         debug_assert_eq!(stats.errstatus, 0);
         let res = AUTOM_GROUP.with(|g| g.take());
         let res = undo_vertex_relabelling(res, &relabel);
-        Ok(AutomGroup(res))
+        Ok(AutomGroup(res, orbits.into_iter().map(|x| x as usize).collect_vec()))
     }
 }
 
@@ -185,7 +186,7 @@ where
             0 => {
                 let res = AUTOM_GROUP.with(|g| g.take());
                 let res = undo_vertex_relabelling(res, &relabel);
-                Ok(AutomGroup(res))
+                Ok(AutomGroup(res, orbits.into_iter().map(|x| x as usize).collect_vec()))
             }
             MTOOBIG => Err(MTooBig),
             NTOOBIG => Err(NTooBig),
